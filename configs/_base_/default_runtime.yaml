@@ -1,0 +1,33 @@
+runtime:
+  device: auto
+  precision: fp32
+  allow_cpu_fallback: true
+  seed: 42
+  deterministic: false
+
+training:
+  epochs: 5
+  val_interval: 1
+  grad_clip: 10.0
+  work_dir: ./work_dirs/experiment
+
+optimizer:
+  type: AdamW
+  lr: 0.001
+  weight_decay: 0.0001
+
+scheduler:
+  type: CosineAnnealingLR
+  warmup_epochs: 1
+  eta_min: 0.00001
+
+hooks:
+  - type: TextLoggerHook
+    interval: 5
+  - type: CheckpointHook
+    interval: 1
+    save_best: AP
+    rule: greater
+  - type: EarlyStoppingHook
+    metric: AP
+    patience: 10

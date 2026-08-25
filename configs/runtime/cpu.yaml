@@ -1,0 +1,6 @@
+# CPU fallback runtime profile
+runtime:
+  device: cpu
+  precision: fp32
+  allow_cpu_fallback: true
+  num_workers: 0

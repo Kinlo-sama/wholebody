@@ -1,0 +1,7 @@
+# Runtime profile for NVIDIA CUDA GPUs
+runtime:
+  device: cuda
+  precision: fp16
+  allow_cpu_fallback: false
+  num_workers: 4
+  pin_memory: true

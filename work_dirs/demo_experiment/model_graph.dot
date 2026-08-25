@@ -1,0 +1,11 @@
+digraph "PoseModelGraph" {
+  rankdir=LR;
+  node [shape=box, style=rounded];
+  "input" [label="INPUT\nInputTensor", fillcolor="#E1BEE7", style="filled,rounded"];
+  "backbone" [label="BACKBONE\nSimpleCNN", fillcolor="#BBDEFB", style="filled,rounded"];
+  "neck" [label="NECK\nIdentityNeck", fillcolor="#C8E6C9", style="filled,rounded"];
+  "head" [label="HEAD\nHeatmapHead", fillcolor="#FFE0B2", style="filled,rounded"];
+  "input" -> "backbone" [label="out->in"];
+  "backbone" -> "neck" [label="out->in"];
+  "neck" -> "head" [label="out->in"];
+}

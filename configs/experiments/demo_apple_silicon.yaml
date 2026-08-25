@@ -1,0 +1,102 @@
+_base_:
+  - ../_base_/default_runtime.yaml
+
+experiment_name: demo_wholebody_mps
+
+runtime:
+  device: auto
+  precision: fp32
+  allow_cpu_fallback: true
+  seed: 42
+
+training:
+  epochs: 3
+  val_interval: 1
+  grad_clip: 5.0
+  work_dir: ./work_dirs/demo_experiment
+
+model:
+  type: TopDownPoseEstimator
+  backbone:
+    type: SimpleCNN
+    in_channels: 3
+    stage_channels: [32, 64, 128, 256]
+    freeze: false
+  neck:
+    type: IdentityNeck
+  head:
+    type: HeatmapHead
+    in_channels: 256
+    num_keypoints: 133
+    deconv_out_channels: [256, 256]
+    loss:
+      type: KeypointMSELoss
+      use_target_weight: true
+      loss_weight: 1.0
+    codec:
+      type: MSRAHeatmapCodec
+      input_size: [256, 192]
+      heatmap_size: [64, 48]
+      sigma: 2.0
+
+data:
+  train:
+    dataset:
+      type: SyntheticWholeBodyDataset
+      num_samples: 32
+      img_size: [512, 512]
+      keypoint_spec: coco_wholebody_133
+      pipeline:
+        - type: TopDownAffine
+          input_size: [256, 192]
+        - type: RandomFlip
+          prob: 0.5
+        - type: RandomRotation
+          max_angle: 20.0
+          prob: 0.5
+        - type: GenerateTarget
+          codec:
+            type: MSRAHeatmapCodec
+            input_size: [256, 192]
+            heatmap_size: [64, 48]
+            sigma: 2.0
+        - type: Normalize
+          mean: [0.485, 0.456, 0.406]
+          std: [0.229, 0.224, 0.225]
+        - type: PackPoseInputs
+    dataloader:
+      batch_size: 8
+      shuffle: true
+      num_workers: 0
+
+  val:
+    dataset:
+      type: SyntheticWholeBodyDataset
+      num_samples: 16
+      img_size: [512, 512]
+      keypoint_spec: coco_wholebody_133
+      test_mode: true
+      pipeline:
+        - type: TopDownAffine
+          input_size: [256, 192]
+        - type: GenerateTarget
+          codec:
+            type: MSRAHeatmapCodec
+            input_size: [256, 192]
+            heatmap_size: [64, 48]
+            sigma: 2.0
+        - type: Normalize
+          mean: [0.485, 0.456, 0.406]
+          std: [0.229, 0.224, 0.225]
+        - type: PackPoseInputs
+    dataloader:
+      batch_size: 8
+      shuffle: false
+      num_workers: 0
+
+evaluation:
+  metrics:
+    - type: PCKMetric
+      threshold: 0.05
+    - type: MPJPEMetric
+    - type: OKSMetric

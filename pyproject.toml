@@ -1,0 +1,48 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "wholebody"
+version = "0.1.0"
+description = "A Modular Research Framework for Whole-Body Human Pose Estimation with Native Apple Silicon (MPS) and CUDA Support"
+readme = "README.md"
+requires-python = ">=3.11"
+authors = [{ name = "WholeBody Contributors" }]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Science/Research",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Scientific/Engineering :: Image Recognition",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+]
+dependencies = [
+    "torch>=2.1.0",
+    "torchvision>=0.16.0",
+    "numpy>=1.24.0",
+    "opencv-python>=4.8.0",
+    "pillow>=9.5.0",
+    "scipy>=1.10.0",
+    "pyyaml>=6.0",
+    "pydantic>=2.0.0",
+]
+
+[project.optional-dependencies]
+wandb = ["wandb>=0.15.0"]
+onnx = ["onnx>=1.14.0", "onnxruntime>=1.15.0"]
+viz = ["matplotlib>=3.7.0", "plotly>=5.14.0"]
+graph = ["graphviz>=0.20.0"]
+dev = [
+    "pytest>=7.3.0",
+    "black>=23.3.0",
+    "flake8>=6.0.0",
+]
+
+[project.scripts]
+wholebody = "tools.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["wholebody*", "tools*"]

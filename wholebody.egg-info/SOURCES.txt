@@ -4,6 +4,7 @@ tests/test_codecs.py
 tools/cli.py
 tools/export_graph.py
 tools/infer.py
+tools/port_mmpose_weights.py
 tools/train.py
 wholebody/__init__.py
 wholebody.egg-info/PKG-INFO
@@ -51,6 +52,7 @@ wholebody/models/__init__.py
 wholebody/models/base.py
 wholebody/models/backbones/__init__.py
 wholebody/models/backbones/base.py
+wholebody/models/backbones/resnet.py
 wholebody/models/backbones/simple_cnn.py
 wholebody/models/external/__init__.py
 wholebody/models/external/adapter_base.py

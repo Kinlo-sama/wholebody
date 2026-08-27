@@ -61,30 +61,13 @@ pip install -e .
 ```
 
 ### 2. Run Tests
-```bash
-# Run all unit tests
-python3 -m unittest discover -s tests -p "test_*.py" -v
-
-# Run dedicated Apple Silicon MPS test
-python3 tests/runtime/test_mps.py
-```
+In progress...
 
 ### 3. Train a Model (Apple Silicon / MPS Demo)
-```bash
-python3 tools/train.py configs/experiments/demo_apple_silicon.yaml --epochs 3
-```
+In progress...
 
 ### 4. Run Inference
-```bash
-python3 tools/infer.py \
-    --config configs/experiments/demo_apple_silicon.yaml \
-    --checkpoint work_dirs/demo_experiment/checkpoints/latest.pth \
-    --output work_dirs/demo_experiment/pred.jpg
-```
+In progress...
 
 ### 5. Export Architecture Graph (for GUI Visual Builders)
-```bash
-python3 tools/export_graph.py \
-    --config configs/experiments/demo_apple_silicon.yaml \
-    --output work_dirs/demo_experiment/model_graph.json
-```
+In progress...

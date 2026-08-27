@@ -1,1 +1,3 @@
 .DS_Store
+nuestro_resnet50_coco.pth
+weights

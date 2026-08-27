@@ -1,4 +1,6 @@
+# Mac
 .DS_Store
+
 # Model weights
 *.pth
 *.pt
@@ -8,3 +10,4 @@
 # Weight directories
 weights/
 checkpoints/
+work_dirs/

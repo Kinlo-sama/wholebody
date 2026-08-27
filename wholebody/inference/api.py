@@ -56,11 +56,20 @@ class PosePredictor:
     def __init__(
         self,
         model: BasePoseEstimator,
-        input_size: Tuple[int, int] = (256, 192),
+        input_size: Optional[Tuple[int, int]] = None,
     ) -> None:
         self.model = model
         self.device_manager = getattr(model, "device_manager", DeviceManager(device="auto"))
-        self.input_size = tuple(input_size)
+        
+        if input_size is not None:
+            self.input_size = tuple(input_size)
+        else:
+            # Try to automatically infer input_size from the model's codec
+            try:
+                self.input_size = tuple(model.head.codec.input_size)
+            except AttributeError:
+                # Default to standard size if codec doesn't have it
+                self.input_size = (256, 192)
 
         # Preprocessing pipeline for inference
         self.pipeline = Compose([

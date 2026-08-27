@@ -1,27 +1,39 @@
+from torch.fx.experimental import symbolic_shapes
 import torch
+import argparse
+from pathlib import Path
+
+def parse_args():
+    parser = argparse.ArgumentParser(description="Port MMPose weights to Wholebody framework")
+    parser.add_argument("input", type=str, help='Path to the original MMPose .pth file')
+    parser.add_argument("output", type=str, help="Destination path for the port .pth file")
+    return parser.parse_args()
+    
 
 def port_weights():
-    # 1. Cargar el archivo original que descargaste
-    mmpose_ckpt = torch.load('weights/res50_coco_wholebody_256x192-9e37ed88_20201004.pth', map_location='cpu')
-    
-    # Extraemos el diccionario de pesos
-    # A veces MMPose guarda el dict dentro de una llave 'state_dict'
+    args = parse_args()
+    # Load the file into the RAM (CPU)
+    mmpose_ckpt = torch.load(args.input, map_location='cpu')
+
+    # MMPOSE sometimes saves extra data (like the optimizer). We only want the "state_dict"
     state_dict = mmpose_ckpt.get('state_dict', mmpose_ckpt)
     
+    # Translate the names
     our_state = {}
-    
     for old_key, tensor in state_dict.items():
         new_key = old_key
         
-        # MMPose usa 'keypoint_head', nuestro framework usa 'head'
+        # RULE: chance "keypoint_head" to "head"
         if old_key.startswith('keypoint_head.'):
             new_key = old_key.replace('keypoint_head.', 'head.')
             
         our_state[new_key] = tensor
 
-    # 2. Guardar el nuevo archivo compatible
-    torch.save(our_state, 'nuestro_resnet50_coco.pth')
-    print("¡Modelo porteado exitosamente!")
+    # 5. Save the new file ready for your framework
+    out_path = Path(args.output)
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    torch.save(our_state, out_path)
+    print(f"Model successfully ported and saved to {out_path}!")
 
 if __name__ == "__main__":
     port_weights()

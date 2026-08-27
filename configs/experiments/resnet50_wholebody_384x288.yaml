@@ -1,0 +1,67 @@
+_base_:
+  - ../runtime/apple_silicon.yaml
+
+# Define our architecture 
+dataset_info:
+  keypoint_spec: coco_wholebody_133
+
+experiment_name: resnet50_wholebody_384x288
+
+# Replicating the optimizer & scheduler from MMPose
+training:
+  epochs: 210
+  val_interval: 10
+  optimizer:
+    type: Adam
+    lr: 0.0005
+  # Our engine handles StepLR natively. 
+  # MMPose dropped LR by 0.1 at epochs 170 and 200
+  lr_scheduler:
+    type: MultiStepLR
+    milestones: [170, 200]
+    gamma: 0.1
+model:
+  type: TopDownPoseEstimator
+  backbone:
+    type: ResNet
+    depth: 50
+  neck:
+    type: IdentityNeck
+  head:
+    type: HeatmapHead
+    in_channels: 2048
+    num_keypoints: 133
+    deconv_out_channels: [256, 256, 256]
+    codec:
+      type: MSRAHeatmapCodec
+      input_size: [384, 288]       # [Height, Width]
+      heatmap_size: [96, 72]       # [Height, Width]
+      sigma: 3.0
+data:
+  train:
+    dataset:
+      type: COCOWholeBodyDataset  # Assuming we implement this soon!
+      ann_file: data/coco/annotations/coco_wholebody_train_v1.0.json
+      img_prefix: data/coco/train2017/
+      keypoint_spec: coco_wholebody_133
+      pipeline:
+        - type: TopDownAffine
+          input_size: [384, 288]
+        - type: RandomFlip
+          prob: 0.5
+        - type: RandomRotation
+          max_angle: 45.0  
+        - type: GenerateTarget
+          codec:
+            type: MSRAHeatmapCodec
+            input_size: [384, 288]
+            heatmap_size: [96, 72]
+            sigma: 3.0
+        - type: Normalize
+          mean: [0.485, 0.456, 0.406]
+          std: [0.229, 0.224, 0.225]
+        - type: PackPoseInputs
+    dataloader:
+      batch_size: 64
+      num_workers: 2
+      shuffle: true

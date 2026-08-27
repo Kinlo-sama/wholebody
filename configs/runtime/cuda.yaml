@@ -1,0 +1,7 @@
+# CUDA runtime configuration
+device: "cuda"
+cudnn_benchmark: true
+
+# Same default paths as others
+work_dir: "work_dirs"
+log_level: "INFO"

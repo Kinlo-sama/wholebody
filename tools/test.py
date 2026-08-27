@@ -45,25 +45,13 @@ def main():
     
     evaluator = Evaluator(metrics=metrics)
 
-    # 4. Run Evaluation Loop
+    # 4. Run Evaluation
     logger.info("Starting evaluation...")
-    model.eval()
-    
-    with torch.no_grad():
-        for batch_idx, batch_data in enumerate(val_loader):
-            inputs = device_manager.to_device(batch_data["inputs"])
-            data_samples = batch_data["data_samples"]
-
-            with device_manager.autocast():
-                pred_samples = model(inputs, data_samples, mode="predict")
-
-            evaluator.process(pred_samples)
-
-            if (batch_idx + 1) % 10 == 0:
-                logger.info(f"Evaluated [{batch_idx + 1}/{len(val_loader)}] batches...")
-
-    # 5. Compute final metrics
-    final_metrics = evaluator.evaluate()
+    final_metrics = evaluator.evaluate(
+        model=model,
+        dataloader=val_loader,
+        device_manager=device_manager,
+    )
     logger.info(f"Evaluation Results:\n{final_metrics}")
 
 if __name__ == "__main__":

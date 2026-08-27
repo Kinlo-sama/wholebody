@@ -24,6 +24,41 @@ class CocoWholeBodyMetric(BaseMetric):
         # Load official COCO Ground Truth once
         self.logger.info(f"Loading COCO Ground Truth from {ann_file}...")
         self.coco_gt = COCO(ann_file)
+        
+        # HACK: COCOeval expects all keypoints in the 'keypoints' list.
+        # COCO-WholeBody splits them. We must merge them in memory so COCOeval doesn't crash!
+        for ann_id, ann in self.coco_gt.anns.items():
+            if 'keypoints' in ann:
+                # 17 body
+                merged = list(ann['keypoints'])
+                
+                # 6 feet
+                if 'foot_kpts' in ann and ann['foot_kpts']:
+                    merged.extend(ann['foot_kpts'])
+                else:
+                    merged.extend([0] * (6 * 3))
+                    
+                # 68 face
+                if 'face_kpts' in ann and ann['face_kpts']:
+                    merged.extend(ann['face_kpts'])
+                else:
+                    merged.extend([0] * (68 * 3))
+                    
+                # 21 left hand
+                if 'lefthand_kpts' in ann and ann['lefthand_kpts']:
+                    merged.extend(ann['lefthand_kpts'])
+                else:
+                    merged.extend([0] * (21 * 3))
+                    
+                # 21 right hand
+                if 'righthand_kpts' in ann and ann['righthand_kpts']:
+                    merged.extend(ann['righthand_kpts'])
+                else:
+                    merged.extend([0] * (21 * 3))
+                    
+                ann['keypoints'] = merged
+                ann['num_keypoints'] = sum(1 for i in range(2, len(merged), 3) if merged[i] > 0)
+                
         self.reset()
 
     def reset(self) -> None:
@@ -74,11 +109,18 @@ class CocoWholeBodyMetric(BaseMetric):
             temp_path = f.name
 
         try:
+            from wholebody.core.registry import KEYPOINT_SPECS
+            
             # Load predictions into COCO format
             coco_dt = self.coco_gt.loadRes(temp_path)
             
             # Run evaluation
             coco_eval = COCOeval(self.coco_gt, coco_dt, iouType='keypoints')
+            
+            # INJECT 133 SIGMAS: COCOeval defaults to 17, which causes the broadcast error.
+            spec = KEYPOINT_SPECS.get("coco_wholebody_133")
+            coco_eval.params.kpt_oks_sigmas = spec.sigmas
+            
             coco_eval.evaluate()
             coco_eval.accumulate()
             coco_eval.summarize()

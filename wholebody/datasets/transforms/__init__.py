@@ -11,6 +11,7 @@ from wholebody.datasets.transforms.formatting import (
     PackPoseInputs,
 )
 from wholebody.datasets.transforms.target_gen import GenerateTarget
+from wholebody.datasets.transforms.loading import LoadImageFromFile
 
 __all__ = [
     "BaseTransform",
@@ -22,4 +23,5 @@ __all__ = [
     "ToTensor",
     "PackPoseInputs",
     "GenerateTarget",
+    "LoadImageFromFile",
 ]

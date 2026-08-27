@@ -1,3 +1,10 @@
 .DS_Store
-nuestro_resnet50_coco.pth
-weights
+# Model weights
+*.pth
+*.pt
+*.ckpt
+*.safetensors
+
+# Weight directories
+weights/
+checkpoints/

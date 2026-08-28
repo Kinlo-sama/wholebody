@@ -177,6 +177,24 @@ def create_coco_wholebody_133_spec() -> KeypointSpec:
     joints = list(coco17.joints.values())
     edges: List[Tuple[int, int]] = [(e.joint1_id, e.joint2_id) for e in coco17.edges]
 
+    # MMPose exact 133 sigmas
+    sigmas = [
+        0.026, 0.025, 0.025, 0.035, 0.035, 0.079, 0.079, 0.072, 0.072, 0.062,
+        0.062, 0.107, 0.107, 0.087, 0.087, 0.089, 0.089, 0.068, 0.066, 0.066,
+        0.092, 0.094, 0.094, 0.042, 0.043, 0.044, 0.043, 0.040, 0.035, 0.031,
+        0.025, 0.020, 0.023, 0.029, 0.032, 0.037, 0.038, 0.043, 0.041, 0.045,
+        0.013, 0.012, 0.011, 0.011, 0.012, 0.012, 0.011, 0.011, 0.013, 0.015,
+        0.009, 0.007, 0.007, 0.007, 0.012, 0.009, 0.008, 0.016, 0.010, 0.017,
+        0.011, 0.009, 0.011, 0.009, 0.007, 0.013, 0.008, 0.011, 0.012, 0.010,
+        0.034, 0.008, 0.008, 0.009, 0.008, 0.008, 0.007, 0.010, 0.008, 0.009,
+        0.009, 0.009, 0.007, 0.007, 0.008, 0.011, 0.008, 0.008, 0.008, 0.01,
+        0.008, 0.029, 0.022, 0.035, 0.037, 0.047, 0.026, 0.025, 0.024, 0.035,
+        0.018, 0.024, 0.022, 0.026, 0.017, 0.021, 0.021, 0.032, 0.02, 0.019,
+        0.022, 0.031, 0.029, 0.022, 0.035, 0.037, 0.047, 0.026, 0.025, 0.024,
+        0.035, 0.018, 0.024, 0.022, 0.026, 0.017, 0.021, 0.021, 0.032, 0.02,
+        0.019, 0.022, 0.031
+    ]
+
     # 17-22: Feet (6) -> 3 per foot
     feet_names = [
         "left_big_toe", "left_small_toe", "left_heel",
@@ -191,29 +209,31 @@ def create_coco_wholebody_133_spec() -> KeypointSpec:
         joints.append(JointSpec(
             id=i, name=name, group="feet",
             color=(0, 200, 255) if "left" in name else (255, 200, 0),
-            weight=1.0, flip_pair=feet_flip.get(name), sigma=0.068
+            weight=1.0, flip_pair=feet_flip.get(name), sigma=sigmas[i]
         ))
     # Feet edges connecting to ankles (15: left_ankle, 16: right_ankle)
     edges.extend([(15, 17), (17, 18), (18, 19), (16, 20), (20, 21), (21, 22)])
 
     # 23-90: Face (68)
+    face_flip = {
+        0: 16, 1: 15, 2: 14, 3: 13, 4: 12, 5: 11, 6: 10, 7: 9, 8: 8,
+        17: 26, 18: 25, 19: 24, 20: 23, 21: 22,
+        31: 35, 32: 34, 36: 45, 37: 44, 38: 43, 39: 42, 40: 47, 41: 46,
+        48: 54, 49: 53, 50: 52, 55: 59, 56: 58, 60: 64, 61: 63, 65: 67
+    }
+    # Make symmetric
+    for k, v in list(face_flip.items()):
+        face_flip[v] = k
+        
     for i in range(68):
         j_id = 23 + i
         name = f"face_{i}"
-        # 68-face symmetric flipping
-        if i < 17:
-            flip_name = f"face_{16 - i}"
-        elif i < 27:
-            flip_name = f"face_{26 - (i - 17)}"
-        elif i < 36:
-            flip_name = f"face_{i}" if i in (30, 33) else (f"face_{35 - (i - 31)}" if i >= 31 else f"face_{i}")
-        elif i < 48:
-            flip_name = f"face_{i + 6}" if i < 42 else f"face_{i - 6}"
-        else:
-            flip_name = f"face_{i}"
+        
+        flip_name = f"face_{face_flip[i]}" if i in face_flip else name
+        
         joints.append(JointSpec(
             id=j_id, name=name, group="face",
-            color=(255, 100, 200), weight=1.0, flip_pair=flip_name, sigma=0.025
+            color=(255, 100, 200), weight=1.0, flip_pair=flip_name, sigma=sigmas[j_id]
         ))
     # Face outline edges
     for i in range(16):
@@ -226,7 +246,7 @@ def create_coco_wholebody_133_spec() -> KeypointSpec:
         flip_name = f"right_hand_{i}"
         joints.append(JointSpec(
             id=j_id, name=name, group="left_hand",
-            color=(100, 255, 100), weight=1.0, flip_pair=flip_name, sigma=0.040
+            color=(100, 255, 100), weight=1.0, flip_pair=flip_name, sigma=sigmas[j_id]
         ))
     # Hand finger edges (wrist: 91, 5 fingers of 4 joints)
     for f in range(5):
@@ -241,7 +261,7 @@ def create_coco_wholebody_133_spec() -> KeypointSpec:
         flip_name = f"left_hand_{i}"
         joints.append(JointSpec(
             id=j_id, name=name, group="right_hand",
-            color=(255, 100, 100), weight=1.0, flip_pair=flip_name, sigma=0.040
+            color=(255, 100, 100), weight=1.0, flip_pair=flip_name, sigma=sigmas[j_id]
         ))
     for f in range(5):
         base = 112 + 1 + f * 4

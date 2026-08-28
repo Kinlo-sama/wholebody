@@ -123,8 +123,12 @@ class CocoWholeBodyMetric(BaseMetric):
             img_to_preds[res["image_id"]].append(res)
             
         filtered_results = []
+        from wholebody.structures.keypoint_spec import KEYPOINT_SPECS
+        spec = KEYPOINT_SPECS.get("coco_wholebody_133")
+        sigmas = np.array(spec.sigmas, dtype=np.float32)
+
         for img_id, preds in img_to_preds.items():
-            filtered_preds = oks_nms(preds)
+            filtered_preds = oks_nms(preds, thr=0.9, sigmas=sigmas)
             filtered_results.extend(filtered_preds)
             
         self.logger.info(f"After NMS: {len(filtered_results)} predictions remain.")

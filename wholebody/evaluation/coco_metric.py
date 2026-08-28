@@ -85,15 +85,24 @@ class CocoWholeBodyMetric(BaseMetric):
             coco_kpts[1::3] = pred_kpts[:, 1]
             coco_kpts[2::3] = 1.0  # Predicted points get visibility 1
             
-            # Score: we can take the mean of keypoint confidence scores
+            # MMPose 'bbox_keypoint' scoring: Only average keypoints with score > 0.2!
             scores = sample.pred_instances.keypoint_scores.detach().cpu().numpy()
-            avg_score = float(np.mean(scores))
+            
+            valid_scores = scores[scores > 0.2]
+            if len(valid_scores) > 0:
+                mean_kpt_score = float(np.mean(valid_scores))
+            else:
+                mean_kpt_score = 0.0
+                
+            # CRITICAL: If using a detector, we MUST multiply by the bounding box confidence!
+            bbox_score = sample.metainfo.get("bbox_score", 1.0)
+            final_score = mean_kpt_score * bbox_score
 
             self.results.append({
                 "image_id": int(image_id),
                 "category_id": 1,  # 1 is person in COCO
                 "keypoints": coco_kpts.tolist(),
-                "score": avg_score
+                "score": final_score
             })
 
     def compute_metrics(self) -> Dict[str, float]:
@@ -103,9 +112,26 @@ class CocoWholeBodyMetric(BaseMetric):
 
         self.logger.info(f"Evaluating {len(self.results)} predictions...")
 
+        # STEP 4: NMS Filtering
+        # MMPose performs OKS NMS to remove overlapping detections.
+        # We group by image_id and apply a bounding box NMS based on keypoint extents.
+        from collections import defaultdict
+        from wholebody.evaluation.nms import oks_nms
+        
+        img_to_preds = defaultdict(list)
+        for res in self.results:
+            img_to_preds[res["image_id"]].append(res)
+            
+        filtered_results = []
+        for img_id, preds in img_to_preds.items():
+            filtered_preds = oks_nms(preds)
+            filtered_results.extend(filtered_preds)
+            
+        self.logger.info(f"After NMS: {len(filtered_results)} predictions remain.")
+
         # Create a temporary JSON file for pycocotools to read
         with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
-            json.dump(self.results, f)
+            json.dump(filtered_results, f)
             temp_path = f.name
 
         try:

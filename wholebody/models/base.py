@@ -79,8 +79,10 @@ class TopDownPoseEstimator(BasePoseEstimator):
         neck: Optional[Union[Dict[str, Any], BaseNeck]] = None,
         pretrained: Optional[str] = None,
         freeze_backbone: bool = False,
+        test_cfg: Optional[Dict[str, Any]] = None,
     ) -> None:
         super().__init__()
+        self.test_cfg = test_cfg or {}
 
         # Build backbone
         if isinstance(backbone, dict):
@@ -140,5 +142,51 @@ class TopDownPoseEstimator(BasePoseEstimator):
         inputs: torch.Tensor,
         data_samples: List[PoseDataSample],
     ) -> List[PoseDataSample]:
+        
+        # 1. Forward original
         feats = self.extract_feat(inputs)
-        return self.head.predict(feats, data_samples)
+        heatmaps = self.head.forward(feats)
+        
+        # 2. Test-Time Augmentation (flip_test)
+        if self.test_cfg.get("flip_test", False):
+            # Forward flipped image
+            inputs_flipped = torch.flip(inputs, dims=[3])
+            feats_flipped = self.extract_feat(inputs_flipped)
+            heatmaps_flipped = self.head.forward(feats_flipped)
+            
+            # Flip heatmap back horizontally
+            heatmaps_flipped = torch.flip(heatmaps_flipped, dims=[3])
+            
+            # Swap channels (left arm <-> right arm)
+            # Find the spec_name from the dataset config or default to 133
+            # We can dynamically get the keypoint spec from the registry
+            from wholebody.core.registry import KEYPOINT_SPECS
+            # Assumes 133 for wholebody models, can be dynamic later
+            spec = KEYPOINT_SPECS.get("coco_wholebody_133")
+            
+            # Reorder channels
+            flip_indices = torch.tensor(spec.flip_indices, device=heatmaps.device)
+            heatmaps_flipped = heatmaps_flipped.index_select(1, flip_indices)
+            
+            # Shift heatmap (optional, standard in MMPose)
+            if self.test_cfg.get("shift_heatmap", True):
+                heatmaps_flipped[..., 1:] = heatmaps_flipped[..., :-1].clone()
+                
+            # Average original and flipped
+            heatmaps = (heatmaps + heatmaps_flipped) / 2.0
+            
+        # 3. Decode
+        metainfo_list = [s.metainfo for s in data_samples]
+        pred_coords, pred_scores = self.head.codec.decode(
+            encoded=heatmaps,
+            metainfo=metainfo_list,
+        )
+
+        from wholebody.structures.data_sample import InstanceData
+        for b, sample in enumerate(data_samples):
+            pred_instances = InstanceData()
+            pred_instances.keypoints = torch.from_numpy(pred_coords[b]).float()
+            pred_instances.keypoint_scores = torch.from_numpy(pred_scores[b]).float()
+            sample.pred_instances = pred_instances
+
+        return data_samples

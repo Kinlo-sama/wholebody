@@ -45,7 +45,8 @@ class Evaluator:
         device = device_manager.get_device()
 
         with torch.no_grad():
-            for batch in dataloader:
+            total_batches = len(dataloader)
+            for batch_idx, batch in enumerate(dataloader):
                 inputs = device_manager.to_device(batch["inputs"])
                 data_samples: List[PoseDataSample] = batch["data_samples"]
 
@@ -57,6 +58,10 @@ class Evaluator:
                     )
 
                 self.process(pred_samples)
+                
+                # Progress logging!
+                if (batch_idx + 1) % 50 == 0 or (batch_idx + 1) == total_batches:
+                    logger.info(f"Evaluando... Lote [{batch_idx + 1}/{total_batches}] ({(batch_idx + 1) / total_batches * 100:.1f}%)")
 
         all_results: Dict[str, float] = {}
         for m in self.metrics:

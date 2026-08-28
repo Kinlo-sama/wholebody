@@ -74,6 +74,13 @@ class TopDownAffine(BaseTransform):
         rot = results.get("rotation", 0.0)
         h_in, w_in = self.input_size
 
+        # Fix scale aspect ratio to prevent cropping tall/wide people!
+        aspect_ratio = float(w_in) / float(h_in)
+        if scale[0] > aspect_ratio * scale[1]:
+            scale[1] = scale[0] / aspect_ratio
+        elif scale[0] < aspect_ratio * scale[1]:
+            scale[0] = scale[1] * aspect_ratio
+
         warp_mat = get_affine_transform(center, scale, rot, (h_in, w_in))
         warp_mat_inv = get_affine_transform(center, scale, rot, (h_in, w_in), inv=True)
 

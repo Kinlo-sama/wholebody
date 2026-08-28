@@ -50,7 +50,8 @@ class PackPoseInputs(BaseTransform):
         self,
         meta_keys: Tuple[str, ...] = (
             "img_id", "img_path", "img_shape", "input_size", "center", "scale",
-            "warp_mat", "warp_mat_inv", "rotation", "flipped", "raw_keypoints"
+            "warp_mat", "warp_mat_inv", "rotation", "flipped", "raw_keypoints",
+            "bbox_score"
         ),
     ) -> None:
         self.meta_keys = meta_keys

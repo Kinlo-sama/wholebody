@@ -1,5 +1,5 @@
 import torch.nn as nn
-from torchvision.models.resnet import resnet50, resnet101
+from torchvision.models.resnet import resnet50, resnet101, resnet152
 from wholebody.core.registry import BACKBONES
 
 @BACKBONES.register("ResNet")
@@ -7,7 +7,9 @@ class ResNetBackbone(nn.Module):
     def __init__(self, depth: int = 50, pretrained: bool = False):
         super().__init__()
         
-        if depth == 101:
+        if depth == 152:
+            resnet = resnet152(pretrained=pretrained)
+        elif depth == 101:
             resnet = resnet101(pretrained=pretrained)
         elif depth == 50:
             resnet = resnet50(pretrained=pretrained)

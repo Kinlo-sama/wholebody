@@ -1,4 +1,3 @@
-from torch.fx.experimental import symbolic_shapes
 import torch
 import argparse
 from pathlib import Path

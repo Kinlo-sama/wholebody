@@ -6,3 +6,5 @@ __all__ = [
     "IdentityNeck",
     "ConvNeck",
 ]
+from .cspnext_pafpn import CSPNeXtPAFPN
+__all__.append("CSPNeXtPAFPN")

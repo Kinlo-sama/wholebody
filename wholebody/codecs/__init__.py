@@ -7,3 +7,5 @@ __all__ = [
     "MSRAHeatmapCodec",
     "RegressionCodec",
 ]
+from .simcc_codec import SimCCCodec
+__all__.append("SimCCCodec")

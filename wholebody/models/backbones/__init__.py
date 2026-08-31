@@ -7,3 +7,5 @@ __all__ = [
     "SimpleCNN",
     "ResNetBackbone"
 ]
+from .cspnext import CSPNeXt
+__all__.append("CSPNeXt")

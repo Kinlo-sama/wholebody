@@ -149,31 +149,33 @@ class TopDownPoseEstimator(BasePoseEstimator):
         
         # 2. Test-Time Augmentation (flip_test)
         if self.test_cfg.get("flip_test", False):
-            # Forward flipped image
             inputs_flipped = torch.flip(inputs, dims=[3])
             feats_flipped = self.extract_feat(inputs_flipped)
             heatmaps_flipped = self.head.forward(feats_flipped)
             
-            # Flip heatmap back horizontally
-            heatmaps_flipped = torch.flip(heatmaps_flipped, dims=[3])
-            
-            # Swap channels (left arm <-> right arm)
-            # Find the spec_name from the dataset config or default to 133
-            # We can dynamically get the keypoint spec from the registry
             from wholebody.core.registry import KEYPOINT_SPECS
-            # Assumes 133 for wholebody models, can be dynamic later
             spec = KEYPOINT_SPECS.get("coco_wholebody_133")
-            
-            # Reorder channels
-            flip_indices = torch.tensor(spec.flip_indices, device=heatmaps.device)
-            heatmaps_flipped = heatmaps_flipped.index_select(1, flip_indices)
-            
-            # Shift heatmap (optional, standard in MMPose)
-            if self.test_cfg.get("shift_heatmap", True):
-                heatmaps_flipped[..., 1:] = heatmaps_flipped[..., :-1].clone()
+            flip_indices = torch.tensor(spec.flip_indices, device=inputs.device)
+
+            if isinstance(heatmaps_flipped, tuple):
+                # SimCC TTA
+                pred_x, pred_y = heatmaps_flipped
+                pred_x_flipped = torch.flip(pred_x, dims=[2]) # Flip X bins
                 
-            # Average original and flipped
-            heatmaps = (heatmaps + heatmaps_flipped) / 2.0
+                # Reorder channels
+                pred_x_flipped = pred_x_flipped.index_select(1, flip_indices)
+                pred_y_flipped = pred_y.index_select(1, flip_indices)
+                
+                pred_x = (heatmaps[0] + pred_x_flipped) / 2.0
+                pred_y = (heatmaps[1] + pred_y_flipped) / 2.0
+                heatmaps = (pred_x, pred_y)
+            else:
+                # Heatmap TTA
+                heatmaps_flipped = torch.flip(heatmaps_flipped, dims=[3])
+                heatmaps_flipped = heatmaps_flipped.index_select(1, flip_indices)
+                if self.test_cfg.get("shift_heatmap", True):
+                    heatmaps_flipped[..., 1:] = heatmaps_flipped[..., :-1].clone()
+                heatmaps = (heatmaps + heatmaps_flipped) / 2.0
             
         # 3. Decode
         metainfo_list = [s.metainfo for s in data_samples]

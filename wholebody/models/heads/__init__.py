@@ -5,3 +5,5 @@ __all__ = [
     "BaseHead",
     "HeatmapHead",
 ]
+from .rtmw_head import RTMWHead
+__all__.append("RTMWHead")

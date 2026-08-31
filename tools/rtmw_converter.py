@@ -1,0 +1,37 @@
+import torch
+import argparse
+import os
+
+def convert_rtmw_weights(input_path, output_path):
+    print(f"Loading {input_path}...")
+    ckpt = torch.load(input_path, map_location='cpu', weights_only=False)
+    
+    # Extract state dict
+    state_dict = ckpt.get('state_dict', ckpt)
+    
+    new_state_dict = {}
+    
+    print("Mapping keys...")
+    for k, v in state_dict.items():
+        new_k = k
+        # MMPose uses 'data_preprocessor' which we don't need in our model
+        if new_k.startswith('data_preprocessor.'):
+            continue
+            
+        # Map depthwise to depthwise_conv in our DepthwiseSeparableConvModule
+        new_k = new_k.replace('.depthwise.', '.depthwise_conv.')
+        new_k = new_k.replace('.pointwise.', '.pointwise_conv.')
+        
+        new_state_dict[new_k] = v
+
+    print(f"Saving converted weights to {output_path}...")
+    torch.save({"state_dict": new_state_dict}, output_path)
+    print("Done!")
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--input', type=str, required=True, help='Path to MMPose RTMW weights')
+    parser.add_argument('--output', type=str, required=True, help='Output path')
+    args = parser.parse_args()
+    
+    convert_rtmw_weights(args.input, args.output)

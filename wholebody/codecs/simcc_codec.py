@@ -114,17 +114,15 @@ class SimCCCodec:
         # Apply metainfo transformations to map back to original image space
         if metainfo is not None:
             for i, meta in enumerate(metainfo):
-                if "input_center" in meta and "input_scale" in meta:
-                    center = meta["input_center"]
-                    scale = meta["input_scale"]
-                    # Usually input_size = [W, H] for scaling, wait our input_size is [H, W]
+                if "warp_mat_inv" in meta:
+                    warp_inv = meta["warp_mat_inv"]
+                    pts_homo = np.concatenate([keypoints[i], np.ones((K, 1), dtype=np.float32)], axis=1)
+                    keypoints[i] = np.dot(pts_homo, warp_inv.T)[:, :2]
+                elif "center" in meta and "scale" in meta:
+                    c = np.array(meta["center"], dtype=np.float32)
+                    s = np.array(meta["scale"], dtype=np.float32) * 200.0
                     H, W = self.input_size
-                    # Scale is usually [W, H] in pixels / 200
-                    w = scale[0] * 200.0
-                    h = scale[1] * 200.0
-                    
-                    # Convert from [0, W] to [-0.5, 0.5]
-                    keypoints[i, :, 0] = (keypoints[i, :, 0] / W - 0.5) * w + center[0]
-                    keypoints[i, :, 1] = (keypoints[i, :, 1] / H - 0.5) * h + center[1]
+                    scale_factor = s / np.array([W, H], dtype=np.float32)
+                    keypoints[i] = (keypoints[i] - np.array([W / 2.0, H / 2.0])) * scale_factor + c
 
         return keypoints, scores

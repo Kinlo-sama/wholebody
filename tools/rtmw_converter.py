@@ -18,10 +18,6 @@ def convert_rtmw_weights(input_path, output_path):
         if new_k.startswith('data_preprocessor.'):
             continue
             
-        # Map depthwise to depthwise_conv in our DepthwiseSeparableConvModule
-        new_k = new_k.replace('.depthwise.', '.depthwise_conv.')
-        new_k = new_k.replace('.pointwise.', '.pointwise_conv.')
-        
         new_state_dict[new_k] = v
 
     print(f"Saving converted weights to {output_path}...")

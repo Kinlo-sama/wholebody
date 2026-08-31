@@ -18,11 +18,11 @@ class ConvModule(nn.Module):
 class DepthwiseSeparableConvModule(nn.Module):
     def __init__(self, in_channels, out_channels, kernel_size, stride=1, padding=0):
         super().__init__()
-        self.depthwise = ConvModule(in_channels, in_channels, kernel_size, stride, padding, groups=in_channels)
-        self.pointwise = ConvModule(in_channels, out_channels, 1, 1, 0)
+        self.depthwise_conv = ConvModule(in_channels, in_channels, kernel_size, stride, padding, groups=in_channels)
+        self.pointwise_conv = ConvModule(in_channels, out_channels, 1, 1, 0)
         
     def forward(self, x):
-        return self.pointwise(self.depthwise(x))
+        return self.pointwise_conv(self.depthwise_conv(x))
 
 class ChannelAttention(nn.Module):
     def __init__(self, channels: int) -> None:

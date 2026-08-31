@@ -12,7 +12,8 @@ def parse_args():
 def port_weights():
     args = parse_args()
     # Load the file into the RAM (CPU)
-    mmpose_ckpt = torch.load(args.input, map_location='cpu')
+    # MMPose checkpoints save full config dicts and numpy arrays in 'meta', so we need weights_only=False
+    mmpose_ckpt = torch.load(args.input, map_location='cpu', weights_only=False)
 
     # MMPOSE sometimes saves extra data (like the optimizer). We only want the "state_dict"
     state_dict = mmpose_ckpt.get('state_dict', mmpose_ckpt)

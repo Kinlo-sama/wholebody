@@ -1,0 +1,34 @@
+import torch
+import sys
+sys.path.insert(0, '.')
+from wholebody.models.base import TopDownPoseEstimator
+from wholebody.core.config import Config
+from wholebody.core.registry import DATASETS
+from torch.utils.data import DataLoader
+
+config = Config.from_file('configs/experiments/rtmw-l_384x288.yaml')
+model = TopDownPoseEstimator(**config.model)
+# Note: config.model.pretrained already points to the fixed weights
+val_dataset = DATASETS.build(config.data.val.dataset)
+val_loader = DataLoader(
+    val_dataset,
+    batch_size=1,
+    shuffle=False,
+    collate_fn=val_dataset.collate_fn,
+)
+
+for batch in val_loader:
+    inputs = batch["inputs"]
+    data_samples = batch["data_samples"]
+    with torch.no_grad():
+        out = model.forward_predict(inputs, data_samples)
+    
+    pred_kpts = out[0].pred_instances.keypoints
+    scores = out[0].pred_instances.keypoint_scores
+    
+    print("Pred Kpts (first 5):")
+    print(pred_kpts[:5])
+    print("Scores (first 5):")
+    print(scores[:5])
+    break
+

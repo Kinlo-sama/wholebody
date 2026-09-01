@@ -66,6 +66,15 @@ class COCOWholeBodyDataset(BasePoseDataset):
                 scale = np.array([bbox[2]/200.0, bbox[3]/200.0], dtype=np.float32)
                 scale = scale * 1.25
 
+                # Fix aspect ratio
+                aspect_ratio = 288.0 / 384.0  # W / H
+                w, h = scale[0], scale[1]
+                if w > h * aspect_ratio:
+                    scale[1] = w / aspect_ratio
+                else:
+                    scale[0] = h * aspect_ratio
+
+
                 # No tenemos ground truth keypoints, llenamos de ceros
                 kpts = np.zeros((133, 2), dtype=np.float32)
                 vis = np.zeros((133,), dtype=np.float32)
@@ -145,6 +154,15 @@ class COCOWholeBodyDataset(BasePoseDataset):
                 
                 # En COCO, a veces se expande la caja un 25% para que la persona no toque los bordes
                 scale = scale * 1.25
+
+                # Fix aspect ratio
+                aspect_ratio = 288.0 / 384.0  # W / H
+                w, h = scale[0], scale[1]
+                if w > h * aspect_ratio:
+                    scale[1] = w / aspect_ratio
+                else:
+                    scale[0] = h * aspect_ratio
+
 
                 data_list.append({
                     "img_path": img_path,

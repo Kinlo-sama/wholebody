@@ -32,14 +32,7 @@ class CocoWholeBodyMetric(BaseMetric):
                 merged = list(ann['keypoints'])[:17*3]
                 ann['keypoints'] = merged
                 ann['num_keypoints'] = sum(1 for v in merged[2::3] if v > 0)
-                w = ann['bbox'][2] / 200.0 * 1.25
-                h = ann['bbox'][3] / 200.0 * 1.25
-                aspect_ratio = 288.0 / 384.0
-                if w > h * aspect_ratio:
-                    h = w / aspect_ratio
-                else:
-                    w = h * aspect_ratio
-                ann['area'] = (w * 200.0) * (h * 200.0)
+                ann['area'] = ann['bbox'][2] * ann['bbox'][3]
         
         self.results: List[Dict] = []
 
@@ -67,18 +60,18 @@ class CocoWholeBodyMetric(BaseMetric):
             coco_kpts = np.zeros(num_kpts * 3, dtype=float)
             coco_kpts[0::3] = pred_kpts[:, 0]
             coco_kpts[1::3] = pred_kpts[:, 1]
-            all_scores = sample.pred_instances.keypoint_scores.detach().cpu().numpy()
-            coco_kpts[2::3] = all_scores[:17]
+            scores = sample.pred_instances.keypoint_scores.detach().cpu().numpy()[:17]
+            coco_kpts[2::3] = scores
             
             # Compute a single score. Here we use the mean of keypoint scores.
             
             # Weighted score: Only use scores > threshold to avoid penalizing good predictions
             # with low-confidence invisible points.
-            valid_scores = all_scores[all_scores > 0.2]
+            valid_scores = scores[scores > 0.2]
             if len(valid_scores) > 0:
                 mean_kpt_score = float(np.mean(valid_scores))
             else:
-                mean_kpt_score = float(np.mean(all_scores))
+                mean_kpt_score = float(np.mean(scores))
                 
             bbox_score = sample.metainfo.get("bbox_score", 1.0)
             final_score = mean_kpt_score * bbox_score
@@ -112,7 +105,7 @@ class CocoWholeBodyMetric(BaseMetric):
         sigmas = np.array(spec.sigmas[:17], dtype=np.float32)
 
         for img_id, preds in img_to_preds.items():
-            filtered_preds = preds
+            filtered_preds = oks_nms(preds, thr=0.9, sigmas=sigmas)
             filtered_results.extend(filtered_preds)
             
         self.logger.info(f"After NMS: {len(filtered_results)} predictions remain.")

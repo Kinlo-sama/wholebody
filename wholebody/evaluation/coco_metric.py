@@ -117,10 +117,9 @@ class CocoWholeBodyMetric(BaseMetric):
             coco_dt = self.coco_gt.loadRes(temp_path)
             
             # Run evaluation natively for keypoints_wholebody
-            coco_eval = COCOeval(self.coco_gt, coco_dt, iouType='keypoints_wholebody')
-            
-            # Inject the 133 sigmas (xtcocotools still requires us to pass them explicitly)
-            coco_eval.params.kpt_oks_sigmas = sigmas
+            # xtcocotools COCOeval takes sigmas and use_area in the constructor!
+            coco_eval = COCOeval(self.coco_gt, coco_dt, 'keypoints_wholebody', sigmas, use_area=True)
+            coco_eval.params.useSegm = None
             
             coco_eval.evaluate()
             coco_eval.accumulate()

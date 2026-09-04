@@ -15,7 +15,7 @@ model:
   type: TopDownPoseEstimator
   pretrained: "weights/rtmw-m_fixed.pth"
   test_cfg:
-    flip_test: false
+    flip_test: true
     shift_heatmap: false
   backbone:
     type: CSPNeXt

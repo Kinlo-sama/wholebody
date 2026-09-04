@@ -28,8 +28,13 @@ class CocoWholeBodyMetric(BaseMetric):
         # HACK: ONLY BODY
         for ann_id, ann in self.coco_gt.anns.items():
             if 'keypoints' in ann:
-                # 17 body ONLY
-                merged = list(ann['keypoints'])[:17*3]
+                # Merge ALL 133 points (Body=17, Foot=6, Face=68, L-Hand=21, R-Hand=21)
+                body = ann.get('keypoints', [0]*51)
+                foot = ann.get('foot_kpts', [0]*18)
+                face = ann.get('face_kpts', [0]*204)
+                left_hand = ann.get('lefthand_kpts', [0]*63)
+                right_hand = ann.get('righthand_kpts', [0]*63)
+                merged = body + foot + face + left_hand + right_hand
                 ann['keypoints'] = merged
                 ann['num_keypoints'] = sum(1 for v in merged[2::3] if v > 0)
                 w = ann['bbox'][2] / 200.0 * 1.25
@@ -59,7 +64,7 @@ class CocoWholeBodyMetric(BaseMetric):
             if pred_kpts.ndim == 3:
                 pred_kpts = pred_kpts[0]
                 
-            pred_kpts = pred_kpts[:17]
+            # Evaluate all 133 points
             
             # Format to COCO: [x, y, visibility, x, y, visibility...]
             # We predict x,y. We set visibility to 1 (predicted).
@@ -68,17 +73,18 @@ class CocoWholeBodyMetric(BaseMetric):
             coco_kpts[0::3] = pred_kpts[:, 0]
             coco_kpts[1::3] = pred_kpts[:, 1]
             all_scores = sample.pred_instances.keypoint_scores.detach().cpu().numpy()
-            coco_kpts[2::3] = all_scores[:17]
+            coco_kpts[2::3] = all_scores
             
             # Compute a single score. Here we use the mean of keypoint scores.
             
             # Weighted score: Only use scores > threshold to avoid penalizing good predictions
             # with low-confidence invisible points.
-            valid_scores = all_scores[all_scores > 0.2]
+            body_scores = all_scores[:17]
+            valid_scores = body_scores[body_scores > 0.2]
             if len(valid_scores) > 0:
                 mean_kpt_score = float(np.mean(valid_scores))
             else:
-                mean_kpt_score = float(np.mean(all_scores))
+                mean_kpt_score = float(np.mean(body_scores))
                 
             bbox_score = sample.metainfo.get("bbox_score", 1.0)
             final_score = mean_kpt_score * bbox_score
@@ -87,7 +93,8 @@ class CocoWholeBodyMetric(BaseMetric):
                 "image_id": image_id,
                 "category_id": 1,
                 "keypoints": coco_kpts.tolist(),
-                "score": final_score
+                "score": final_score,
+                "area": float((sample.metainfo.get("scale")[0] * 200.0) * (sample.metainfo.get("scale")[1] * 200.0))
             })
 
     def compute_metrics(self) -> Dict[str, float]:
@@ -109,10 +116,10 @@ class CocoWholeBodyMetric(BaseMetric):
         filtered_results = []
         from wholebody.structures.keypoint_spec import KEYPOINT_SPECS
         spec = KEYPOINT_SPECS.get("coco_wholebody_133")
-        sigmas = np.array(spec.sigmas[:17], dtype=np.float32)
+        sigmas = np.array(spec.sigmas, dtype=np.float32)
 
         for img_id, preds in img_to_preds.items():
-            filtered_preds = preds
+            filtered_preds = oks_nms(preds, thr=0.7, sigmas=sigmas)
             filtered_results.extend(filtered_preds)
             
         self.logger.info(f"After NMS: {len(filtered_results)} predictions remain.")
@@ -133,7 +140,7 @@ class CocoWholeBodyMetric(BaseMetric):
             
             # INJECT 17 SIGMAS
             spec = KEYPOINT_SPECS.get("coco_wholebody_133")
-            coco_eval.params.kpt_oks_sigmas = spec.sigmas[:17]
+            coco_eval.params.kpt_oks_sigmas = np.array(spec.sigmas, dtype=np.float32)
             
             coco_eval.evaluate()
             coco_eval.accumulate()

@@ -52,7 +52,9 @@ def oks_nms(preds: List[Dict], thr: float = 0.9, sigmas: np.ndarray = None) -> L
         
         # Estimate area from kpt1 (rough approximation for OKS)
         # Better: if 'bbox' is present, use bbox area * 0.53 (MMPose standard)
-        if "bbox" in preds[i]:
+        if "area" in preds[i]:
+            area1 = preds[i]["area"]
+        elif "bbox" in preds[i]:
             # COCO JSON format is [x, y, w, h] or sometimes we don't have it in preds.
             # Wait, in our coco_metric.py, do we save bbox? Let me check.
             # We didn't save bbox in `results.append(...)`! We only saved image_id, category_id, keypoints, score.

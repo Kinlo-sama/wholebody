@@ -1,7 +1,7 @@
 _base_:
   - ../runtime/apple_silicon.yaml
 
-experiment_name: rtmw-m_256x192
+experiment_name: rtmw-x_256x192
 
 training:
   epochs: 270
@@ -13,7 +13,7 @@ training:
 
 model:
   type: TopDownPoseEstimator
-  pretrained: "weights/rtmw-m_ported.pth"
+  pretrained: "weights/rtmw-x_ported.pth"
   test_cfg:
     flip_test: true
     shift_heatmap: false
@@ -21,20 +21,20 @@ model:
     type: CSPNeXt
     arch: P5
     expand_ratio: 0.5
-    deepen_factor: 0.67
-    widen_factor: 0.75
+    deepen_factor: 1.33
+    widen_factor: 1.25
     channel_attention: true
     out_indices: [2, 3, 4]
   neck:
     type: CSPNeXtPAFPN
-    in_channels: [192, 384, 768]
+    in_channels: [320, 640, 1280]
     out_channels: null
     out_indices: [1, 2]
     num_csp_blocks: 2
     expand_ratio: 0.5
   head:
     type: RTMWHead
-    in_channels: 768
+    in_channels: 1280
     out_channels: 133
     input_size: [256, 192]
     in_featuremap_size: [8, 6]

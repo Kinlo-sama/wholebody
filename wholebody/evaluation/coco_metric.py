@@ -96,8 +96,20 @@ class CocoWholeBodyMetric(BaseMetric):
             
         self.logger.info(f"After NMS: {len(filtered_results)} predictions remain.")
 
+        # Format specifically for xtcocotools which expects 5 separate arrays
+        xtcoco_results = []
+        for res in filtered_results:
+            kpts = res["keypoints"]
+            formatted_res = res.copy()
+            formatted_res["keypoints"] = kpts[:51]
+            formatted_res["foot_kpts"] = kpts[51:69]
+            formatted_res["face_kpts"] = kpts[69:273]
+            formatted_res["lefthand_kpts"] = kpts[273:336]
+            formatted_res["righthand_kpts"] = kpts[336:399]
+            xtcoco_results.append(formatted_res)
+
         with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
-            json.dump(filtered_results, f)
+            json.dump(xtcoco_results, f)
             temp_path = f.name
 
         try:

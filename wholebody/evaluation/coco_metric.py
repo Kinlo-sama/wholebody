@@ -57,7 +57,7 @@ class CocoWholeBodyMetric(BaseMetric):
             if len(valid_scores) > 0:
                 mean_kpt_score = float(np.mean(valid_scores))
             else:
-                mean_kpt_score = float(np.mean(all_scores))
+                mean_kpt_score = 0.0
                 
             bbox_score = sample.metainfo.get("bbox_score", 1.0)
             final_score = mean_kpt_score * bbox_score

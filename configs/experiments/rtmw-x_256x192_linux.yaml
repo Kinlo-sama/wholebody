@@ -1,5 +1,5 @@
 _base_:
-  - ../runtime/apple_silicon.yaml
+  - ../runtime/nvidia.yaml
 
 experiment_name: rtmw-x_256x192
 

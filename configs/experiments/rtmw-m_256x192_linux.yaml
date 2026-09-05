@@ -28,7 +28,7 @@ model:
     input_size: [256, 192]
     in_featuremap_size: [8, 6]
     simcc_split_ratio: 2.0
-    final_layer_kernel_size: 1
+    final_layer_kernel_size: 7
     gau_cfg:
       hidden_dims: 256
       s: 128
@@ -51,13 +51,12 @@ model:
 data:
   val:
     dataset:
-      type: CocoWholeBodyDataset
+      type: COCOWholeBodyDataset
       ann_file: data/coco/annotations/coco_wholebody_val_v1.0.json
       img_prefix: data/coco/val2017/
+      keypoint_spec: coco_wholebody_133
       pipeline:
-        - type: LoadImage
-        - type: GetBBoxCenterScale
-          padding: 1.25
+        - type: LoadImageFromFile
         - type: TopDownAffine
           input_size: [256, 192]
         - type: Normalize

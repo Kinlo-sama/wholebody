@@ -67,7 +67,7 @@ data:
       bbox_file: data/coco/person_detection_results/COCO_val2017_detections_AP_H_56_person.json
     dataloader:
       batch_size: 32
-      num_workers: 4
+      num_workers: 0
 
 evaluation:
   metrics:

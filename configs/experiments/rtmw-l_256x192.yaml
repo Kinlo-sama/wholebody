@@ -13,7 +13,7 @@ training:
 
 model:
   type: TopDownPoseEstimator
-  pretrained: "weights/rtmw-l_ported.pth"
+  pretrained: null
   test_cfg:
     flip_test: true
     shift_heatmap: false

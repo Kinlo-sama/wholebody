@@ -9,7 +9,7 @@ class ConvModule(nn.Module):
     def __init__(self, in_channels, out_channels, kernel_size, stride=1, padding=0, groups=1, act=None):
         super().__init__()
         self.conv = nn.Conv2d(in_channels, out_channels, kernel_size, stride, padding, groups=groups, bias=False)
-        self.bn = nn.BatchNorm2d(out_channels, momentum=0.03, eps=0.001)
+        self.bn = nn.BatchNorm2d(out_channels, momentum=0.1, eps=1e-5)
         self.act = act if act is not None else nn.SiLU(inplace=True)
         
     def forward(self, x):

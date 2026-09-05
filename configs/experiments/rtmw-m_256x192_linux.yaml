@@ -1,0 +1,3 @@
+_base_:
+  - ../runtime/nvidia.yaml
+  - ./rtmw-m_256x192.yaml

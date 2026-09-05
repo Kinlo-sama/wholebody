@@ -1,22 +1,8 @@
-_base_:
-  - ../runtime/apple_silicon.yaml
-
-experiment_name: rtmw-m_256x192
-
-training:
-  epochs: 270
-  val_interval: 10
-  optimizer:
-    type: AdamW
-    lr: 0.004
-    weight_decay: 0.05
+_base_: ../runtime/default.yaml
 
 model:
   type: TopDownPoseEstimator
-  pretrained: "weights/rtmw-m_ported.pth"
-  test_cfg:
-    flip_test: true
-    shift_heatmap: false
+  
   backbone:
     type: CSPNeXt
     arch: P5
@@ -25,6 +11,7 @@ model:
     widen_factor: 0.75
     channel_attention: true
     out_indices: [2, 3, 4]
+    
   neck:
     type: CSPNeXtPAFPN
     in_channels: [192, 384, 768]
@@ -32,6 +19,7 @@ model:
     out_indices: [1, 2]
     num_csp_blocks: 2
     expand_ratio: 0.5
+    
   head:
     type: RTMWHead
     in_channels: 768
@@ -39,13 +27,13 @@ model:
     input_size: [256, 192]
     in_featuremap_size: [8, 6]
     simcc_split_ratio: 2.0
-    final_layer_kernel_size: 7
+    final_layer_kernel_size: 1
     gau_cfg:
       hidden_dims: 256
       s: 128
       expansion_factor: 2
-      dropout_rate: 0.
-      drop_path: 0.
+      dropout_rate: 0.0
+      drop_path: 0.0
       act_fn: SiLU
       use_rel_bias: false
       pos_enc: false
@@ -55,28 +43,31 @@ model:
       sigma: 5.0
       simcc_split_ratio: 2.0
       normalize: false
+      
+  test_cfg:
+    flip_test: true
 
 data:
   val:
     dataset:
-      type: COCOWholeBodyDataset
+      type: CocoWholeBodyDataset
       ann_file: data/coco/annotations/coco_wholebody_val_v1.0.json
       img_prefix: data/coco/val2017/
-      keypoint_spec: coco_wholebody_133
-      test_mode: true
-      bbox_file: data/coco/person_detection_results/COCO_val2017_detections_AP_H_56_person.json
       pipeline:
-        - type: LoadImageFromFile
+        - type: LoadImage
+        - type: GetBBoxCenterScale
+          padding: 1.25
         - type: TopDownAffine
           input_size: [256, 192]
         - type: Normalize
           mean: [0.485, 0.456, 0.406]
           std: [0.229, 0.224, 0.225]
         - type: PackPoseInputs
+      test_mode: true
+      bbox_file: data/coco/person_detection_results/COCO_val2017_detections_AP_H_56_person.json
     dataloader:
       batch_size: 32
-      num_workers: 0
-      shuffle: false
+      num_workers: 4
 
 evaluation:
   metrics:

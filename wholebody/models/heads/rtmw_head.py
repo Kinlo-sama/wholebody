@@ -237,6 +237,7 @@ class RTMWHead(nn.Module):
             kernel_size=final_layer_kernel_size,
             stride=1,
             padding=final_layer_kernel_size // 2,
+            act=nn.ReLU(inplace=True)
         )
 
         self.final_layer = ConvModule(
@@ -245,6 +246,7 @@ class RTMWHead(nn.Module):
             kernel_size=final_layer_kernel_size,
             stride=1,
             padding=final_layer_kernel_size // 2,
+            act=nn.ReLU(inplace=True)
         )
         
         self.final_layer2 = ConvModule(
@@ -253,6 +255,7 @@ class RTMWHead(nn.Module):
             kernel_size=final_layer_kernel_size,
             stride=1,
             padding=final_layer_kernel_size // 2,
+            act=nn.ReLU(inplace=True)
         )
 
         self.mlp = nn.Sequential(

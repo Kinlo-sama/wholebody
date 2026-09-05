@@ -52,13 +52,12 @@ class CocoWholeBodyMetric(BaseMetric):
             all_scores = sample.pred_instances.keypoint_scores.detach().cpu().numpy()
             coco_kpts[2::3] = all_scores
             
-            # Ranking score: use body points (17) for score ranking like MMPose
-            body_scores = all_scores[:17]
-            valid_scores = body_scores[body_scores > 0.2]
+            # Ranking score: use all keypoints for score ranking like MMPose (score_mode='bbox_keypoint')
+            valid_scores = all_scores[all_scores > 0.2]
             if len(valid_scores) > 0:
                 mean_kpt_score = float(np.mean(valid_scores))
             else:
-                mean_kpt_score = float(np.mean(body_scores))
+                mean_kpt_score = float(np.mean(all_scores))
                 
             bbox_score = sample.metainfo.get("bbox_score", 1.0)
             final_score = mean_kpt_score * bbox_score

@@ -1,36 +1,23 @@
 import numpy as np
 from typing import List, Dict
 
-def compute_oks(kpt1, kpt2, sigmas, area):
+def compute_oks(kpt1: np.ndarray, kpt2: np.ndarray, sigmas: np.ndarray, area1: float, area2: float = None) -> float:
     """Compute OKS between two keypoint arrays.
     kpt1, kpt2: (K, 3) where [:, 2] is score/visibility.
     """
-    # Only use keypoints that both predictions think are visible
-    # Or just use keypoints from kpt1 that have score > 0.05
-    k1_x = kpt1[:, 0]
-    k1_y = kpt1[:, 1]
-    k1_s = kpt1[:, 2]
-    
-    k2_x = kpt2[:, 0]
-    k2_y = kpt2[:, 1]
-    k2_s = kpt2[:, 2]
-    
-    # Distance squared
-    dx = k1_x - k2_x
-    dy = k1_y - k2_y
-    d2 = dx**2 + dy**2
-    
-    # Sigmas and area
+    # d2 = (dx^2 + dy^2)
+    d2 = (kpt1[:, 0] - kpt2[:, 0])**2 + (kpt1[:, 1] - kpt2[:, 1])**2
     vars = (sigmas * 2)**2
     
-    # Filter points where BOTH have reasonable confidence
-    vis = (k1_s > 0.0) & (k2_s > 0.0)
-    if np.sum(vis) == 0:
-        return 0.0
+    # Use average area just like MMPose oks_iou: ((a_g + a_d) / 2 + eps)
+    if area2 is not None:
+        area = (area1 + area2) / 2.0
+    else:
+        area = area1
         
-    # OKS formula
+    # OKS formula (no visibility filtering by default in MMPose oks_nms)
     e = d2 / (2 * area * vars + 1e-9)
-    oks = np.sum(np.exp(-e[vis])) / np.sum(vis)
+    oks = np.sum(np.exp(-e)) / len(e)
     return float(oks)
 
 def oks_nms(preds: List[Dict], thr: float = 0.9, sigmas: np.ndarray = None) -> List[Dict]:
@@ -77,7 +64,14 @@ def oks_nms(preds: List[Dict], thr: float = 0.9, sigmas: np.ndarray = None) -> L
         for j in keep:
             kpt2 = np.array(preds[j]["keypoints"]).reshape(-1, 3)
             
-            oks = compute_oks(kpt1, kpt2, sigmas, area1)
+            if "area" in preds[j]:
+                area2 = preds[j]["area"]
+            else:
+                min_x2, min_y2 = np.min(kpt2[:, 0]), np.min(kpt2[:, 1])
+                max_x2, max_y2 = np.max(kpt2[:, 0]), np.max(kpt2[:, 1])
+                area2 = max((max_x2 - min_x2) * (max_y2 - min_y2), 1.0)
+                
+            oks = compute_oks(kpt1, kpt2, sigmas, area1, area2)
             
             if oks > thr: # Default MMPose OKS NMS threshold is 0.9
                 keep_pred = False

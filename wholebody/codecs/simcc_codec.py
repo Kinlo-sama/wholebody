@@ -98,11 +98,14 @@ class SimCCCodec:
         x_scores = simcc_x.amax(dim=2)
         y_scores = simcc_y.amax(dim=2)
         
-        # Total confidence score is often the product or average of x and y confidence
-        scores = (x_scores + y_scores) / 2.0
+        # MMPose takes the minimum of x and y confidence scores
+        scores = torch.minimum(x_scores, y_scores)
 
         # Create output tensor
         keypoints = torch.stack([x_locs.float(), y_locs.float()], dim=-1)
+        
+        # MMPose sets coords to -1.0 where score <= 0.0
+        keypoints[scores <= 0.0] = -1.0
 
         # Map back to network input space
         keypoints /= self.simcc_split_ratio

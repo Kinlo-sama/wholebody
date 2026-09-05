@@ -12,11 +12,15 @@ def parse_args():
 def port_weights():
     args = parse_args()
     # Load the file into the RAM (CPU)
-    # MMPose checkpoints save full config dicts and numpy arrays in 'meta', so we need weights_only=False
     mmpose_ckpt = torch.load(args.input, map_location='cpu', weights_only=False)
 
-    # MMPOSE sometimes saves extra data (like the optimizer). We only want the "state_dict"
-    state_dict = mmpose_ckpt.get('state_dict', mmpose_ckpt)
+    # Use ema_state_dict if available, otherwise state_dict
+    if 'ema_state_dict' in mmpose_ckpt:
+        print("Found ema_state_dict! Using EMA weights.")
+        state_dict = mmpose_ckpt['ema_state_dict']
+    else:
+        print("No ema_state_dict found. Using state_dict.")
+        state_dict = mmpose_ckpt.get('state_dict', mmpose_ckpt)
     
     # Translate the names
     our_state = {}
@@ -29,7 +33,7 @@ def port_weights():
             
         our_state[new_key] = tensor
 
-    # 5. Save the new file ready for your framework
+    # Save the new file ready for your framework
     out_path = Path(args.output)
     out_path.parent.mkdir(parents=True, exist_ok=True)
     torch.save(our_state, out_path)

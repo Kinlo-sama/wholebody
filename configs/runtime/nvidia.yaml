@@ -1,0 +1,7 @@
+# Optimized runtime configuration for NVIDIA GPUs
+runtime:
+  device: cuda
+  precision: fp32
+  allow_cpu_fallback: true
+  num_workers: 4
+  persistent_workers: true

@@ -44,9 +44,20 @@ class Evaluator:
         model.eval()
         device = device_manager.get_device()
 
+        import time
+        import datetime
+
         with torch.no_grad():
             total_batches = len(dataloader)
+            
+            batch_times = []
+            data_times = []
+            end_time = time.perf_counter()
+            
             for batch_idx, batch in enumerate(dataloader):
+                data_time = time.perf_counter() - end_time
+                data_times.append(data_time)
+                
                 inputs = device_manager.to_device(batch["inputs"])
                 data_samples: List[PoseDataSample] = batch["data_samples"]
 
@@ -59,9 +70,29 @@ class Evaluator:
 
                 self.process(pred_samples)
                 
+                batch_time = time.perf_counter() - end_time
+                batch_times.append(batch_time)
+                
                 # Progress logging!
                 if (batch_idx + 1) % 50 == 0 or (batch_idx + 1) == total_batches:
-                    logger.info(f"Evaluando... Lote [{batch_idx + 1}/{total_batches}] ({(batch_idx + 1) / total_batches * 100:.1f}%)")
+                    avg_time = sum(batch_times[-50:]) / len(batch_times[-50:])
+                    avg_data_time = sum(data_times[-50:]) / len(data_times[-50:])
+                    remaining_batches = total_batches - (batch_idx + 1)
+                    eta_seconds = int(avg_time * remaining_batches)
+                    eta_str = str(datetime.timedelta(seconds=eta_seconds))
+                    
+                    mem_str = ""
+                    if torch.cuda.is_available():
+                        mem_MB = int(torch.cuda.max_memory_allocated() / (1024 * 1024))
+                        mem_str = f"  memory: {mem_MB}"
+                        
+                    logger.info(
+                        f"Epoch(test) [{batch_idx + 1:4d}/{total_batches}]    "
+                        f"eta: {eta_str}  time: {avg_time:.4f}  "
+                        f"data_time: {avg_data_time:.4f}{mem_str}"
+                    )
+                
+                end_time = time.perf_counter()
 
         all_results: Dict[str, float] = {}
         for m in self.metrics:

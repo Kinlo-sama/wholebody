@@ -238,13 +238,12 @@ class RTMCCHead(nn.Module):
             self.codec = None
 
         flatten_dims = self.in_featuremap_size[0] * self.in_featuremap_size[1]
-        self.final_layer = ConvModule(
+        self.final_layer = nn.Conv2d(
             in_channels,
             out_channels,
             kernel_size=final_layer_kernel_size,
             stride=1,
-            padding=final_layer_kernel_size // 2,
-            act=nn.ReLU(inplace=True)
+            padding=final_layer_kernel_size // 2
         )
 
         self.mlp = nn.Sequential(

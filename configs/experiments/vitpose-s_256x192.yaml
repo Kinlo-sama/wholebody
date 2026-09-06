@@ -1,0 +1,125 @@
+_base_:
+- ../runtime/apple_silicon.yaml
+dataset_info:
+  keypoint_spec: coco_wholebody_133
+experiment_name: vitpose-s_256x192
+training:
+  epochs: 210
+  val_interval: 10
+  optimizer:
+    type: Adam
+    lr: 0.0005
+  lr_scheduler:
+    type: MultiStepLR
+    milestones:
+    - 170
+    - 200
+    gamma: 0.1
+model:
+  type: TopDownPoseEstimator
+  pretrained: weights/vitpose_small_ported.pth
+  test_cfg:
+    flip_test: true
+    shift_heatmap: true
+  backbone:
+    type: ViTMoE
+    img_size:
+    - 256
+    - 192
+    patch_size: 16
+    embed_dim: 384
+    depth: 12
+    num_heads: 12
+    num_expert: 6
+    part_features: 192
+    drop_path_rate: 0.3
+  neck: null
+  head:
+    type: HeatmapHead
+    in_channels: 384
+    num_keypoints: 133
+    deconv_out_channels:
+    - 256
+    - 256
+    codec:
+      type: MSRAHeatmapCodec
+      input_size:
+      - 256
+      - 192
+      heatmap_size:
+      - 64
+      - 48
+      sigma: 2.0
+data:
+  train:
+    dataset:
+      type: COCOWholeBodyDataset
+      ann_file: data/coco/annotations/coco_wholebody_train_v1.0.json
+      img_prefix: data/coco/train2017/
+      keypoint_spec: coco_wholebody_133
+      pipeline:
+      - type: LoadImageFromFile
+      - type: TopDownAffine
+        input_size:
+        - 256
+        - 192
+      - type: RandomFlip
+        prob: 0.5
+      - type: RandomRotation
+        max_angle: 45.0
+      - type: GenerateTarget
+        codec:
+          type: MSRAHeatmapCodec
+          input_size:
+          - 256
+          - 192
+          heatmap_size:
+          - 64
+          - 48
+          sigma: 2.0
+      - type: Normalize
+        mean:
+        - 0.485
+        - 0.456
+        - 0.406
+        std:
+        - 0.229
+        - 0.224
+        - 0.225
+      - type: PackPoseInputs
+    dataloader:
+      batch_size: 64
+      num_workers: 2
+      shuffle: true
+  val:
+    dataset:
+      type: COCOWholeBodyDataset
+      ann_file: data/coco/annotations/coco_wholebody_val_v1.0.json
+      img_prefix: data/coco/val2017/
+      keypoint_spec: coco_wholebody_133
+      test_mode: true
+      bbox_file: data/coco/person_detection_results/COCO_val2017_detections_AP_H_56_person.json
+      pipeline:
+      - type: LoadImageFromFile
+      - type: TopDownAffine
+        input_size:
+        - 256
+        - 192
+      - type: Normalize
+        mean:
+        - 0.485
+        - 0.456
+        - 0.406
+        std:
+        - 0.229
+        - 0.224
+        - 0.225
+      - type: PackPoseInputs
+    dataloader:
+      batch_size: 32
+      num_workers: 0
+      shuffle: false
+evaluation:
+  metrics:
+  - type: CocoWholeBodyMetric
+    ann_file: data/coco/annotations/coco_wholebody_val_v1.0.json

@@ -7,3 +7,7 @@ __all__ = [
     "SyntheticWholeBodyDataset",
     "COCOWholeBodyDataset"
 ]
+from .combined_dataset import CombinedDataset
+__all__.append("CombinedDataset")
+from .dummy_dataset import DummyPoseDataset
+__all__.append("DummyPoseDataset")

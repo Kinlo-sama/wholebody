@@ -5,7 +5,6 @@ import torch.nn.functional as F
 from typing import Sequence, Tuple, Union
 
 from wholebody.core.registry import HEADS
-from wholebody.models.heads.base import BaseHead
 from wholebody.models.backbones.cspnext import ConvModule
 
 def rope(x, dim):
@@ -203,7 +202,7 @@ class RTMCCBlock(nn.Module):
             return self.drop_path(self._forward(x))
 
 @HEADS.register("RTMCCHead")
-class RTMCCHead(BaseHead):
+class RTMCCHead(nn.Module):
     def __init__(
         self,
         in_channels: int,

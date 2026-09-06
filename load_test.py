@@ -1,5 +1,9 @@
 import sys
 sys.path.append('.')
-from wholebody.core.registry import HEADS
-from wholebody.models.heads import RTMCCHead
-print("RTMCCHead is successfully registered!")
+import torch
+from wholebody.core.config import Config
+from wholebody.core.registry import MODELS
+import wholebody.models
+cfg = Config.from_file('configs/experiments/dwpose-m_256x192.yaml')
+model = MODELS.build(cfg.model)
+print("Model built successfully!")

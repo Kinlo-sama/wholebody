@@ -22,7 +22,7 @@ model:
     flip_test: true
     shift_heatmap: true
   backbone:
-    type: ViTMoE
+    type: ViT
     img_size:
     - 256
     - 192
@@ -30,8 +30,6 @@ model:
     embed_dim: 1280
     depth: 32
     num_heads: 16
-    num_expert: 6
-    part_features: 320
     drop_path_rate: 0.3
   neck: null
   head:

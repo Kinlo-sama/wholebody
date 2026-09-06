@@ -11,3 +11,4 @@ __all__ = [
     "ViTMoE",
     "CSPNeXt",
 ]
+from .vit import ViT

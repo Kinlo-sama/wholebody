@@ -62,8 +62,10 @@ class HeatmapHead(BaseHead):
         else:
             self.codec = codec
 
-    def forward(self, feats: torch.Tensor) -> torch.Tensor:
+    def forward(self, feats: Union[torch.Tensor, Tuple[torch.Tensor, ...]]) -> torch.Tensor:
         """Compute heatmap logits."""
+        if isinstance(feats, tuple) or isinstance(feats, list):
+            feats = feats[-1]
         x = self.deconv_layers(feats)
         heatmaps = self.final_layer(x)
         return heatmaps

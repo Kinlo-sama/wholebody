@@ -296,10 +296,11 @@ class RTMCCHead(nn.Module):
         weights = torch.stack([s.gt_instances.keypoint_weights for s in batch_data_samples]).to(device)
         
         # The codec should have a method to generate target simcc from keypoints
-        gt_x, gt_y, gt_weight = self.codec.encode(keypoints.cpu().numpy(), weights.cpu().numpy())
-        gt_x = torch.from_numpy(gt_x).to(device)
-        gt_y = torch.from_numpy(gt_y).to(device)
-        gt_weight = torch.from_numpy(gt_weight).to(device)
+        # The codec returns a dict
+        encoded = self.codec.encode(keypoints.cpu().numpy(), weights.cpu().numpy())
+        gt_x = torch.from_numpy(encoded['keypoint_x_labels']).to(device)
+        gt_y = torch.from_numpy(encoded['keypoint_y_labels']).to(device)
+        gt_weight = torch.from_numpy(encoded['keypoint_weights']).to(device)
         
         loss_val = self.loss_module((pred_x, pred_y), (gt_x, gt_y), gt_weight)
         

@@ -17,10 +17,6 @@ model:
     widen_factor: 0.75
     out_indices: [4]
     channel_attention: true
-    norm_cfg:
-      type: BN
-    act_cfg:
-      type: SiLU
   neck: null
   head:
     type: RTMCCHead

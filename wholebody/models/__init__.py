@@ -21,3 +21,7 @@ __all__ = [
     "SmoothL1Loss",
     "BaseExternalModelAdapter",
 ]
+from . import distillers
+from .distillers import PoseEstimatorDistiller
+__all__.append("distillers")
+__all__.append("PoseEstimatorDistiller")

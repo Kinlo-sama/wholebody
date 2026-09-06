@@ -8,3 +8,8 @@ __all__ = [
     "KeypointMSELoss",
     "SmoothL1Loss",
 ]
+from .fea_loss import FeaLoss
+from .kd_loss import KDLoss
+from .kl_discret_loss import KLDiscretLoss
+
+__all__.extend(["FeaLoss", "KDLoss", "KLDiscretLoss"])

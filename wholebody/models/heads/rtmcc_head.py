@@ -284,3 +284,23 @@ class RTMCCHead(nn.Module):
         pred_y = self.cls_y(feats)
         
         return pred_x, pred_y
+
+    def loss(self, feats, batch_data_samples):
+        pred_x, pred_y = self.forward(feats)
+        
+        # SimCC codec uses keypoints directly to create ground truth SimCC
+        # Our pipeline should theoretically generate gt_x and gt_y, but currently
+        # it just produces heatmaps or keypoints. We will extract keypoints and target_weight.
+        device = pred_x.device
+        keypoints = torch.stack([s.gt_instances.keypoints for s in batch_data_samples]).to(device)
+        weights = torch.stack([s.gt_instances.keypoint_weights for s in batch_data_samples]).to(device)
+        
+        # The codec should have a method to generate target simcc from keypoints
+        gt_x, gt_y, gt_weight = self.codec.encode(keypoints.cpu().numpy(), weights.cpu().numpy())
+        gt_x = torch.from_numpy(gt_x).to(device)
+        gt_y = torch.from_numpy(gt_y).to(device)
+        gt_weight = torch.from_numpy(gt_weight).to(device)
+        
+        loss_val = self.loss_module((pred_x, pred_y), (gt_x, gt_y), gt_weight)
+        
+        return {"loss_kpt": loss_val}

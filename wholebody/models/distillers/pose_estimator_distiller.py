@@ -40,7 +40,7 @@ class PoseEstimatorDistiller(BasePoseEstimator):
     def extract_feat(self, inputs: torch.Tensor):
         return self.student.extract_feat(inputs)
         
-    def loss(self, inputs: torch.Tensor, data_samples: List[PoseDataSample]) -> Dict[str, torch.Tensor]:
+    def forward_train(self, inputs: torch.Tensor, data_samples: List[PoseDataSample]) -> Dict[str, torch.Tensor]:
         with torch.no_grad():
             self.teacher.eval()
             t_feats = self.teacher.extract_feat(inputs)

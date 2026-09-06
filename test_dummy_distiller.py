@@ -58,7 +58,7 @@ for _ in range(2):
     sample.gt_instances.keypoint_weights = torch.ones(133)
     data_samples.append(sample)
 
-losses = distiller.loss(x, data_samples)
+losses = distiller.forward_train(x, data_samples)
 print("✅ Losses Computed Successfully:")
 for k, v in losses.items():
     print(f"  - {k}: {v.item():.4f}")

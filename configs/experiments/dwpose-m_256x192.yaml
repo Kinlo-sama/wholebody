@@ -41,7 +41,6 @@ model:
       sigma: [4.9, 5.66]
       simcc_split_ratio: 2.0
       normalize: false
-      use_dark: false
 
 data:
   val:

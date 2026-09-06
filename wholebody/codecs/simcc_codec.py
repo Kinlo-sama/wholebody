@@ -48,7 +48,13 @@ class SimCCCodec:
         x_grid = np.arange(0, W_simcc, 1, dtype=np.float32)
         y_grid = np.arange(0, H_simcc, 1, dtype=np.float32)
 
-        radius = self.sigma * 3
+        if isinstance(self.sigma, (list, tuple)):
+            sigma_x, sigma_y = self.sigma
+        else:
+            sigma_x = sigma_y = self.sigma
+
+        radius_x = sigma_x * 3
+        radius_y = sigma_y * 3
 
         for n in range(N):
             for k in range(K):
@@ -56,19 +62,18 @@ class SimCCCodec:
                     continue
 
                 mu_x, mu_y = keypoints_split[n, k]
-
+                
                 if mu_x < 0 or mu_x >= W_simcc or mu_y < 0 or mu_y >= H_simcc:
                     keypoint_weights[n, k] = 0
                     continue
 
                 # Create 1D Gaussians
-                target_x[n, k] = np.exp(-((x_grid - mu_x)**2) / (2 * self.sigma**2))
-                target_y[n, k] = np.exp(-((y_grid - mu_y)**2) / (2 * self.sigma**2))
+                target_x[n, k] = np.exp(-((x_grid - mu_x)**2) / (2 * sigma_x**2))
+                target_y[n, k] = np.exp(-((y_grid - mu_y)**2) / (2 * sigma_y**2))
 
         if self.normalize:
-            norm_value = self.sigma * np.sqrt(np.pi * 2)
-            target_x /= norm_value
-            target_y /= norm_value
+            target_x /= (sigma_x * np.sqrt(np.pi * 2))
+            target_y /= (sigma_y * np.sqrt(np.pi * 2))
 
         return dict(
             keypoint_x_labels=target_x,

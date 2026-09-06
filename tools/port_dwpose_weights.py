@@ -1,46 +1,26 @@
-import torch
 import argparse
-from pathlib import Path
+import torch
 
 def parse_args():
-    parser = argparse.ArgumentParser(description="Port DWPose Distiller weights to Wholebody framework")
-    parser.add_argument("input", type=str, help='Path to the original DWPose .pth file')
-    parser.add_argument("output", type=str, help="Destination path for the port .pth file")
+    parser = argparse.ArgumentParser(description='Extract student weights from DWPose distillation checkpoint')
+    parser.add_argument('in_path', help='Path to the downloaded DWPose checkpoint')
+    parser.add_argument('out_path', help='Path to save the extracted student checkpoint')
     return parser.parse_args()
 
-def port_weights():
+def main():
     args = parse_args()
-    ckpt = torch.load(args.input, map_location='cpu', weights_only=False)
-
-    # Prefer EMA weights as they almost always yield better AP
-    if 'ema_state_dict' in ckpt:
-        state_dict = ckpt['ema_state_dict']
-        print("Using ema_state_dict for optimal AP.")
-    else:
-        state_dict = ckpt.get('state_dict', ckpt)
-        print("Using standard state_dict.")
+    print(f"Loading checkpoint from {args.in_path}...")
+    ckpt = torch.load(args.in_path, map_location='cpu')
     
-    our_state = {}
-    for old_key, tensor in state_dict.items():
-        new_key = old_key
-        
-        # If it's inside the distiller (EMA), extract the student
-        if new_key.startswith('module.student.'):
-            new_key = new_key.replace('module.student.', '')
-        # Ignore the teacher
-        elif new_key.startswith('module.teacher.'):
-            continue
-            
-        # Legacy failsafe
-        if new_key.startswith('keypoint_head.'):
-            new_key = new_key.replace('keypoint_head.', 'head.')
-            
-        our_state[new_key] = tensor
+    # We explicitly extract from the regular state_dict.
+    # DWPose's original training script appears to have failed to update the student
+    # within the ema_state_dict, leaving it randomly initialized. The regular state_dict
+    # correctly stores the fully trained student weights without any wrapper prefixes.
+    state = ckpt.get('state_dict', ckpt)
+    
+    torch.save(state, args.out_path)
+    print(f"Extracted {len(state)} weights.")
+    print(f"Successfully saved clean student checkpoint to {args.out_path}")
 
-    out_path = Path(args.output)
-    out_path.parent.mkdir(parents=True, exist_ok=True)
-    torch.save(our_state, out_path)
-    print(f"DWPose weights successfully extracted and saved to {out_path}!")
-
-if __name__ == "__main__":
-    port_weights()
+if __name__ == '__main__':
+    main()

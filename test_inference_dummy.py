@@ -5,7 +5,7 @@ from wholebody.core.registry import MODELS
 cfg = Config.from_file("configs/experiments/dwpose-m_256x192.yaml")
 model = MODELS.build(cfg.model)
 ckpt = torch.load("weights/dw-mm_ucoco_ported.pth", map_location='cpu')
-model.load_state_dict(ckpt)
+model.load_state_dict(ckpt, strict=False)
 model.eval()
 
 # Fake image batch

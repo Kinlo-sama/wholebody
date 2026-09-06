@@ -7,3 +7,5 @@ __all__ = [
 ]
 from .rtmw_head import RTMWHead
 __all__.append("RTMWHead")
+from .rtmcc_head import RTMCCHead
+__all__.append("RTMCCHead")

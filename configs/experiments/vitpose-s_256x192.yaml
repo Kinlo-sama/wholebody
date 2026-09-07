@@ -20,7 +20,7 @@ model:
   pretrained: weights/vitpose_small_ported.pth
   test_cfg:
     flip_test: true
-    shift_heatmap: true
+    shift_heatmap: false
   backbone:
     type: ViT
     img_size:
@@ -40,7 +40,7 @@ model:
     - 256
     - 256
     codec:
-      type: MSRAHeatmapCodec
+      type: UDPHeatmapCodec
       input_size:
       - 256
       - 192
@@ -58,6 +58,7 @@ data:
       pipeline:
       - type: LoadImageFromFile
       - type: TopDownAffine
+        use_udp: true
         input_size:
         - 256
         - 192
@@ -67,7 +68,7 @@ data:
         max_angle: 45.0
       - type: GenerateTarget
         codec:
-          type: MSRAHeatmapCodec
+          type: UDPHeatmapCodec
           input_size:
           - 256
           - 192
@@ -100,6 +101,7 @@ data:
       pipeline:
       - type: LoadImageFromFile
       - type: TopDownAffine
+        use_udp: true
         input_size:
         - 256
         - 192

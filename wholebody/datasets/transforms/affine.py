@@ -51,12 +51,32 @@ def get_affine_transform(
     return trans
 
 
+
+def get_warp_matrix(theta: float, size_input: np.ndarray, size_dst: np.ndarray, size_target: np.ndarray) -> np.ndarray:
+    theta = np.deg2rad(theta)
+    matrix = np.zeros((2, 3), dtype=np.float32)
+    scale_x = size_dst[0] / size_target[0]
+    scale_y = size_dst[1] / size_target[1]
+    matrix[0, 0] = np.cos(theta) * scale_x
+    matrix[0, 1] = -np.sin(theta) * scale_x
+    matrix[0, 2] = scale_x * (-0.5 * size_input[0] * np.cos(theta) +
+                              0.5 * size_input[1] * np.sin(theta) +
+                              0.5 * size_target[0])
+    matrix[1, 0] = np.sin(theta) * scale_y
+    matrix[1, 1] = np.cos(theta) * scale_y
+    matrix[1, 2] = scale_y * (-0.5 * size_input[0] * np.sin(theta) -
+                              0.5 * size_input[1] * np.cos(theta) +
+                              0.5 * size_target[1])
+    return matrix
+
 @TRANSFORMS.register("TopDownAffine")
+
 class TopDownAffine(BaseTransform):
     """Crop and warp image and keypoints centered on person bounding box into model input shape."""
 
-    def __init__(self, input_size: Tuple[int, int] = (256, 192)) -> None:
-        self.input_size = tuple(input_size)  # (H, W)
+        def __init__(self, input_size: Tuple[int, int] = (256, 192), use_udp: bool = False) -> None:
+        self.input_size = tuple(input_size)
+        self.use_udp = use_udp  # (H, W)
 
     def transform(self, results: Dict[str, Any]) -> Dict[str, Any]:
         img = results["img"]
@@ -74,15 +94,22 @@ class TopDownAffine(BaseTransform):
         rot = results.get("rotation", 0.0)
         h_in, w_in = self.input_size
 
-        # Fix scale aspect ratio to prevent cropping tall/wide people!
+                # Fix scale aspect ratio to prevent cropping tall/wide people!
         aspect_ratio = float(w_in) / float(h_in)
         if scale[0] > aspect_ratio * scale[1]:
             scale[1] = scale[0] / aspect_ratio
         elif scale[0] < aspect_ratio * scale[1]:
             scale[0] = scale[1] * aspect_ratio
 
-        warp_mat = get_affine_transform(center, scale, rot, (h_in, w_in))
-        warp_mat_inv = get_affine_transform(center, scale, rot, (h_in, w_in), inv=True)
+        if self.use_udp:
+            warp_mat = get_warp_matrix(rot, center * 2.0, np.array([w_in - 1.0, h_in - 1.0]), scale * 200.0)
+            warp_mat_inv = get_warp_matrix(-rot, np.array([w_in - 1.0, h_in - 1.0]), center * 2.0, scale * 200.0)
+            # Need actual inverse for proper mapping back, get_warp_matrix doesn't natively invert center/scale the same way.
+            # Instead, let's just invert the 2x3 matrix using cv2.invertAffineTransform
+            warp_mat_inv = cv2.invertAffineTransform(warp_mat)
+        else:
+            warp_mat = get_affine_transform(center, scale, rot, (h_in, w_in))
+            warp_mat_inv = get_affine_transform(center, scale, rot, (h_in, w_in), inv=True)
 
         warped_img = cv2.warpAffine(img, warp_mat, (w_in, h_in), flags=cv2.INTER_LINEAR)
         results["img"] = warped_img

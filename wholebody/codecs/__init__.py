@@ -9,3 +9,4 @@ __all__ = [
 ]
 from .simcc_codec import SimCCCodec
 __all__.append("SimCCCodec")
+from .udp_heatmap import UDPHeatmapCodec

@@ -74,7 +74,7 @@ def get_warp_matrix(theta: float, size_input: np.ndarray, size_dst: np.ndarray, 
 class TopDownAffine(BaseTransform):
     """Crop and warp image and keypoints centered on person bounding box into model input shape."""
 
-        def __init__(self, input_size: Tuple[int, int] = (256, 192), use_udp: bool = False) -> None:
+    def __init__(self, input_size: Tuple[int, int] = (256, 192), use_udp: bool = False) -> None:
         self.input_size = tuple(input_size)
         self.use_udp = use_udp  # (H, W)
 

@@ -67,7 +67,7 @@ class UDPHeatmapCodec(BaseCodec):
             for k in range(K):
                 px = int(preds[b, k, 0])
                 py = int(preds[b, k, 1])
-                if 1 < px < W - 1 and 1 < py < H - 1:
+                if 1 < px < W - 2 and 1 < py < H - 2:
                     dx = 0.5 * (heatmaps[b, k, py, px + 1] - heatmaps[b, k, py, px - 1])
                     dy = 0.5 * (heatmaps[b, k, py + 1, px] - heatmaps[b, k, py - 1, px])
                     dxx = 0.25 * (heatmaps[b, k, py, px + 2] - 2 * heatmaps[b, k, py, px] + heatmaps[b, k, py, px - 2])
